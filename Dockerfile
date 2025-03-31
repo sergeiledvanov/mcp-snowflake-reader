@@ -19,8 +19,13 @@ COPY main.py .
 RUN chmod +x main.py
 
 # 환경 변수 설정 (기본값)
-ENV SNOWFLAKE_CONNECTION='{}'
+ENV MCP_SNOWFLAKE_CONNECTION='{}'
+ENV MCP_ALLOWED_DATABASES=''
+ENV MCP_ALLOWED_SCHEMAS=''
+ENV MCP_ALLOWED_TABLES=''
 
 # 실행 명령
-ENTRYPOINT ["python", "main.py"]
-CMD ["$SNOWFLAKE_CONNECTION"] 
+CMD /bin/sh -c 'python main.py --connection "$MCP_SNOWFLAKE_CONNECTION" \
+    $([ ! -z "$MCP_ALLOWED_DATABASES" ] && echo "--allowed-databases $MCP_ALLOWED_DATABASES") \
+    $([ ! -z "$MCP_ALLOWED_SCHEMAS" ] && echo "--allowed-schemas $MCP_ALLOWED_SCHEMAS") \
+    $([ ! -z "$MCP_ALLOWED_TABLES" ] && echo "--allowed-tables $MCP_ALLOWED_TABLES")' 

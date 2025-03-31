@@ -1,67 +1,85 @@
-# Snowflake Read Python
+# MCP Snowflake Reader
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Snowflake 데이터베이스에 연결하여 테이블 스키마를 조회하고 쿼리를 실행할 수 있는 MCP(Model Context Protocol) 서버입니다.
+Snowflake 데이터베이스에 대한 읽기 전용 접근을 제공하는 MCP 서버입니다.
 
-## 설치 방법
+## 기능
 
-1. Python 3.10 이상이 필요합니다.
-2. 의존성 설치:
-   ```bash
-   pip install -r requirements.txt
-   ```
+- 테이블 목록 조회
+- 테이블 스키마 조회
+- 읽기 전용 SQL 쿼리 실행
+- 데이터베이스, 스키마, 테이블 수준의 접근 제어
 
-## 사용 방법
+## 보안
 
-### 로컬 실행
+이 서버는 읽기 전용 작업만 허용하며, 다음과 같은 보안 기능을 제공합니다:
 
-1. Snowflake 연결 정보를 JSON 형식으로 준비합니다:
-   ```json
-   {
-     "account": "your_account",
-     "user": "your_username",
-     "password": "your_password",
-     "warehouse": "your_warehouse",
-     "database": "your_database",
-     "schema": "your_schema"
-   }
-   ```
+- SQL 인젝션 방지를 위한 테이블 이름 검증
+- 읽기 전용 쿼리만 허용 (INSERT, UPDATE, DELETE 등 금지)
+- 데이터베이스, 스키마, 테이블 수준의 세분화된 접근 제어
 
-2. 서버 실행:
-   ```bash
-   python main.py '{"account": "your_account", "user": "your_username", ...}'
-   ```
+## 설치
 
-### 도커 실행
+```bash
+pip install mcp-snowflake-reader
+```
 
-1. 도커 이미지 빌드:
-   ```bash
-   docker build -t snowflake-read-python .
-   ```
+## 사용법
 
-2. 도커 컨테이너 실행:
-   ```bash
-   # 연결 정보를 환경 변수로 전달
-   docker run -e SNOWFLAKE_CONNECTION='{"account": "your_account", "user": "your_username", "password": "your_password", "warehouse": "your_warehouse", "database": "your_database", "schema": "your_schema"}' snowflake-read-python
+### Docker로 실행
 
-   # 또는 파일에서 연결 정보 읽기
-   docker run -v $(pwd)/connection.json:/app/connection.json snowflake-read-python "$(cat /app/connection.json)"
-   ```
+```bash
+docker build -t mcp-snowflake-reader .
+docker run -e MCP_SNOWFLAKE_CONNECTION='{"account":"USER_ACCOUNT","port":"443","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE"}' mcp-snowflake-reader
+```
 
-## 지원하는 기능
+### 직접 실행
 
-1. 테이블 목록 조회
-2. 테이블 스키마 조회
-3. SQL 쿼리 실행 (읽기 전용)
+```bash
+python main.py --connection '{"account":"USER_ACCOUNT","port":"443","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE"}'
+```
 
-## 에러 처리
+## API 엔드포인트
 
-- 모든 에러는 표준 에러(stderr)로 출력됩니다.
-- 연결 실패, 쿼리 실행 오류 등이 발생하면 적절한 에러 메시지가 표시됩니다.
+### 테이블 목록 조회
+```
+GET /snowflake://tables
+```
 
-## 보안 주의사항
+### 테이블 스키마 조회
+```
+GET /snowflake://schema/{table_name}
+```
 
-- 연결 정보에 민감한 데이터가 포함되어 있으므로 안전하게 관리해야 합니다.
-- 환경 변수나 설정 파일을 통해 연결 정보를 관리하는 것을 권장합니다.
-- 도커 환경에서 실행할 때는 연결 정보를 환경 변수나 마운트된 설정 파일을 통해 전달하는 것이 좋습니다. 
+### SQL 쿼리 실행
+```
+POST /query
+Content-Type: application/json
+
+{
+    "sql": "SELECT * FROM your_table LIMIT 10"
+}
+```
+
+## 제한사항
+
+- 읽기 전용 작업만 허용됩니다
+- 테이블 이름은 영숫자, 언더스코어, 점만 허용됩니다
+- 다음 SQL 키워드는 금지됩니다:
+  - INSERT
+  - UPDATE
+  - DELETE
+  - DROP
+  - TRUNCATE
+  - ALTER
+  - CREATE
+  - GRANT
+  - REVOKE
+  - COMMIT
+  - ROLLBACK
+- 접근 제어가 설정된 경우, 허용된 데이터베이스, 스키마, 테이블만 접근 가능합니다
+
+## 라이선스
+
+MIT License 
