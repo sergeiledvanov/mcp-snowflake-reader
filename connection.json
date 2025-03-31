@@ -1,0 +1,9 @@
+{
+    "account": "gv28284.ap-northeast-2.aws",
+    "user": "cookie",
+    "password": "Taya3023",
+    "warehouse": "DEV_WH",
+    "database": "FNF",
+    "schema": "PUBLIC",
+    "role": "PU_ALL"
+} 
