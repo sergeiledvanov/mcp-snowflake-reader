@@ -18,6 +18,12 @@ def parse_args():
     parser.add_argument('--allowed-databases', nargs='*', help='List of allowed databases')
     parser.add_argument('--allowed-schemas', nargs='*', help='List of allowed schemas')
     parser.add_argument('--allowed-tables', nargs='*', help='List of allowed tables')
+    
+    # 도움말 출력 후 바로 종료
+    if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv:
+        parser.print_help()
+        sys.exit(0)
+    
     return parser.parse_args()
 
 
@@ -95,8 +101,17 @@ async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
         mcp.allowed_schemas = set(args.allowed_schemas or [])
         mcp.allowed_tables = set(args.allowed_tables or [])
         yield
+    except json.JSONDecodeError:
+        raise Exception("연결 정보가 올바른 JSON 형식이 아닙니다. JSON 형식을 확인해주세요.")
+    except snowflake.connector.errors.InterfaceError as e:
+        if "404 Not Found" in str(e):
+            raise Exception("Snowflake 서버에 연결할 수 없습니다. 계정 정보를 확인해주세요.")
+        elif "250001" in str(e):
+            raise Exception("사용자 이름 또는 비밀번호가 올바르지 않습니다.")
+        else:
+            raise Exception(f"Snowflake 연결 오류: {str(e)}")
     except Exception as e:
-        raise Exception(f"Failed to connect to Snowflake: {str(e)}")
+        raise Exception(f"Snowflake 연결 실패: {str(e)}\n연결 정보를 다시 확인해주세요.")
     finally:
         if hasattr(mcp, 'connection') and mcp.connection:
             mcp.connection.close()
