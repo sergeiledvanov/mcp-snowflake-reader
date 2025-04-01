@@ -30,15 +30,17 @@ startCommand:
       - snowflake_warehouse
   commandFunction: |
     function(config) {
+      const connection = JSON.stringify({
+        account: config.snowflake_account,
+        user: config.snowflake_user,
+        password: config.snowflake_password,
+        database: config.snowflake_database,
+        schema: config.snowflake_schema,
+        warehouse: config.snowflake_warehouse
+      });
+      
       return {
-        command: ["python", "main.py"],
-        env: {
-          SNOWFLAKE_ACCOUNT: config.snowflake_account,
-          SNOWFLAKE_USER: config.snowflake_user,
-          SNOWFLAKE_PASSWORD: config.snowflake_password,
-          SNOWFLAKE_DATABASE: config.snowflake_database,
-          SNOWFLAKE_SCHEMA: config.snowflake_schema,
-          SNOWFLAKE_WAREHOUSE: config.snowflake_warehouse
-        }
+        command: "python",
+        args: ["main.py", "--connection", connection]
       };
     } 
