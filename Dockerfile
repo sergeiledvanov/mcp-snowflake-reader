@@ -25,7 +25,4 @@ ENV MCP_ALLOWED_SCHEMAS=''
 ENV MCP_ALLOWED_TABLES=''
 
 # 실행 명령
-CMD /bin/sh -c 'python main.py --connection "$MCP_SNOWFLAKE_CONNECTION" \
-    $([ ! -z "$MCP_ALLOWED_DATABASES" ] && echo "--allowed-databases $MCP_ALLOWED_DATABASES") \
-    $([ ! -z "$MCP_ALLOWED_SCHEMAS" ] && echo "--allowed-schemas $MCP_ALLOWED_SCHEMAS") \
-    $([ ! -z "$MCP_ALLOWED_TABLES" ] && echo "--allowed-tables $MCP_ALLOWED_TABLES")' 
+ENTRYPOINT ["python", "main.py"] 

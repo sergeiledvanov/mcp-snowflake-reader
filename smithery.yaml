@@ -1,0 +1,44 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      snowflake_account:
+        type: string
+        description: "Snowflake 계정 URL"
+      snowflake_user:
+        type: string
+        description: "Snowflake 사용자 이름"
+      snowflake_password:
+        type: string
+        description: "Snowflake 비밀번호"
+      snowflake_database:
+        type: string
+        description: "Snowflake 데이터베이스 이름"
+      snowflake_schema:
+        type: string
+        description: "Snowflake 스키마 이름"
+      snowflake_warehouse:
+        type: string
+        description: "Snowflake 웨어하우스 이름"
+    required:
+      - snowflake_account
+      - snowflake_user
+      - snowflake_password
+      - snowflake_database
+      - snowflake_schema
+      - snowflake_warehouse
+  commandFunction: |
+    function(config) {
+      return {
+        command: ["python", "main.py"],
+        env: {
+          SNOWFLAKE_ACCOUNT: config.snowflake_account,
+          SNOWFLAKE_USER: config.snowflake_user,
+          SNOWFLAKE_PASSWORD: config.snowflake_password,
+          SNOWFLAKE_DATABASE: config.snowflake_database,
+          SNOWFLAKE_SCHEMA: config.snowflake_schema,
+          SNOWFLAKE_WAREHOUSE: config.snowflake_warehouse
+        }
+      };
+    } 
