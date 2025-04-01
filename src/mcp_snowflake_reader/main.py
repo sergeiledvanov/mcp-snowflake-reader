@@ -19,11 +19,6 @@ def parse_args():
     parser.add_argument('--allowed-schemas', nargs='*', help='List of allowed schemas')
     parser.add_argument('--allowed-tables', nargs='*', help='List of allowed tables')
     
-    # 도움말 출력 후 바로 종료
-    if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv:
-        parser.print_help()
-        sys.exit(0)
-    
     return parser.parse_args()
 
 
@@ -234,7 +229,15 @@ def query(sql: str) -> str:
 
 def main():
     """Entry point for the MCP server."""
-    mcp.run()
+    try:
+        # 도움말 출력 여부 확인
+        if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv:
+            parse_args()
+            return
+            
+        mcp.run()
+    except KeyboardInterrupt:
+        print("\n👋 MCP Snowflake Reader stopped by user.")
 
 
 if __name__ == "__main__":

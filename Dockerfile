@@ -2,27 +2,21 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# 필요한 시스템 패키지 설치
+# Install system packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# 의존성 파일 복사 및 설치
+# Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 파일 복사
-COPY main.py .
+# Copy application files
+COPY src/mcp_snowflake_reader/main.py .
 
-# 실행 권한 설정
+# Set execute permission
 RUN chmod +x main.py
 
-# 환경 변수 설정 (기본값)
-ENV MCP_SNOWFLAKE_CONNECTION='{}'
-ENV MCP_ALLOWED_DATABASES=''
-ENV MCP_ALLOWED_SCHEMAS=''
-ENV MCP_ALLOWED_TABLES=''
-
-# 실행 명령
+# Run the application
 ENTRYPOINT ["python", "main.py"] 

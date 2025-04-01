@@ -25,6 +25,7 @@ venv/
 ENV/
 env/
 .env
+.venv/
 
 # IDE
 .idea/
@@ -36,8 +37,12 @@ env/
 .DS_Store
 Thumbs.db
 
+# Node.js
+node_modules/
+package-lock.json
+
 # Project specific
 setup.py
-pyproject.toml
 __init__.py
-claude-config.json 
+claude-config.json
+smithery.yaml 

@@ -36,23 +36,45 @@ pip install -r requirements.txt
 #### Running with Docker
 
 ```bash
+# Build the Docker image
 docker build -t mcp-snowflake-reader .
-docker run -e MCP_SNOWFLAKE_CONNECTION='{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' mcp-snowflake-reader
+
+# Run with connection details
+docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
+
+# Run with access control
+docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
+
+# Show help
+docker run mcp-snowflake-reader -h
 ```
 
 #### Running directly
 
 ```bash
+# Run with connection details
 python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
+
+# Run with access control
+python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
+
+# Show help
+python main.py -h
 ```
+
+### Command Line Options
+
+- `--connection`: Snowflake 연결 정보 (JSON 문자열)
+- `--allowed-databases`: 허용할 데이터베이스 목록 (선택사항)
+- `--allowed-schemas`: 허용할 스키마 목록 (선택사항)
+- `--allowed-tables`: 허용할 테이블 목록 (선택사항)
+- `-h, --help`: 도움말 표시
 
 ### API Endpoints
 
-- `list_databases`: List all accessible databases
-- `list_schemas`: List all accessible schemas in a database
-- `list_tables`: List all accessible tables in a schema
-- `get_table_schema`: Get the schema of a specific table
-- `query`: Execute a read-only query
+- `snowflake://tables`: 접근 가능한 모든 테이블 목록 조회
+- `snowflake://schema/{table_name}`: 특정 테이블의 스키마 조회
+- `query`: 읽기 전용 쿼리 실행
 
 ### Security
 
@@ -95,22 +117,44 @@ pip install -r requirements.txt
 #### Docker로 실행
 
 ```bash
+# Docker 이미지 빌드
 docker build -t mcp-snowflake-reader .
-docker run -e MCP_SNOWFLAKE_CONNECTION='{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' mcp-snowflake-reader
+
+# 연결 정보로 실행
+docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
+
+# 접근 제어와 함께 실행
+docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
+
+# 도움말 표시
+docker run mcp-snowflake-reader -h
 ```
 
 #### 직접 실행
 
 ```bash
+# 연결 정보로 실행
 python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
+
+# 접근 제어와 함께 실행
+python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
+
+# 도움말 표시
+python main.py -h
 ```
+
+### 명령줄 옵션
+
+- `--connection`: Snowflake 연결 정보 (JSON 문자열)
+- `--allowed-databases`: 허용할 데이터베이스 목록 (선택사항)
+- `--allowed-schemas`: 허용할 스키마 목록 (선택사항)
+- `--allowed-tables`: 허용할 테이블 목록 (선택사항)
+- `-h, --help`: 도움말 표시
 
 ### API 엔드포인트
 
-- `list_databases`: 접근 가능한 모든 데이터베이스 목록 조회
-- `list_schemas`: 데이터베이스 내의 모든 접근 가능한 스키마 목록 조회
-- `list_tables`: 스키마 내의 모든 접근 가능한 테이블 목록 조회
-- `get_table_schema`: 특정 테이블의 스키마 조회
+- `snowflake://tables`: 접근 가능한 모든 테이블 목록 조회
+- `snowflake://schema/{table_name}`: 특정 테이블의 스키마 조회
 - `query`: 읽기 전용 쿼리 실행
 
 ### 보안
