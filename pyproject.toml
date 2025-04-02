@@ -1,6 +1,6 @@
 [project]
 name = "mcp-snowflake-reader"
-version = "0.1.8"
+version = "0.1.9"
 description = "Read-only MCP server for Snowflake databases"
 readme = "README.md"
 requires-python = ">=3.10"

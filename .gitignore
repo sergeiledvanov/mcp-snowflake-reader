@@ -45,4 +45,6 @@ package-lock.json
 setup.py
 __init__.py
 claude-config.json
-smithery.yaml 
+smithery.yaml
+
+test_uvx_cli.sh

@@ -15,11 +15,9 @@ def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='MCP server for read-only access to Snowflake databases')
     parser.add_argument('--connection', required=True, help='Snowflake connection details as JSON string')
-    parser.add_argument('--allowed-databases', nargs='*', help='List of allowed databases')
-    parser.add_argument('--allowed-schemas', nargs='*', help='List of allowed schemas')
-    parser.add_argument('--allowed-tables', nargs='*', help='List of allowed tables')
     
-    return parser.parse_args()
+    args = parser.parse_args()
+    return args
 
 
 def validate_table_name(table_name: str) -> bool:
@@ -52,37 +50,6 @@ def validate_sql_query(sql: str) -> bool:
     return not any(keyword in sql_upper for keyword in forbidden_keywords)
 
 
-def check_access_permission(database: str, schema: str, table: str, allowed_databases: Set[str], allowed_schemas: Set[str], allowed_tables: Set[str]) -> bool:
-    """Check if access to the specified database, schema, and table is allowed.
-    Args:
-        database: Database name
-        schema: Schema name
-        table: Table name
-        allowed_databases: Set of allowed database names
-        allowed_schemas: Set of allowed schema names
-        allowed_tables: Set of allowed table names
-    Returns:
-        bool: True if access is allowed, False otherwise
-    """
-    # If no restrictions are set, allow all access
-    if not (allowed_databases or allowed_schemas or allowed_tables):
-        return True
-
-    # Check database access
-    if allowed_databases and database not in allowed_databases:
-        return False
-
-    # Check schema access
-    if allowed_schemas and schema not in allowed_schemas:
-        return False
-
-    # Check table access
-    if allowed_tables and table not in allowed_tables:
-        return False
-
-    return True
-
-
 @asynccontextmanager
 async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
     """Manages Snowflake connection lifecycle during server startup/shutdown.
@@ -92,9 +59,6 @@ async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
         connection_details = json.loads(args.connection)
         mcp.connection = snowflake.connector.connect(**connection_details)
         mcp.is_connected = True
-        mcp.allowed_databases = set(args.allowed_databases or [])
-        mcp.allowed_schemas = set(args.allowed_schemas or [])
-        mcp.allowed_tables = set(args.allowed_tables or [])
         yield
     except json.JSONDecodeError:
         raise Exception("연결 정보가 올바른 JSON 형식이 아닙니다. JSON 형식을 확인해주세요.")
@@ -128,18 +92,6 @@ def list_tables() -> str:
     try:
         cursor.execute("SHOW TABLES")
         rows = cursor.fetchall()
-        
-        # Filter tables based on access permissions
-        if mcp.allowed_databases or mcp.allowed_schemas or mcp.allowed_tables:
-            filtered_rows = []
-            for row in rows:
-                database = row[1]  # database_name
-                schema = row[2]    # schema_name
-                table = row[3]     # table_name
-                if check_access_permission(database, schema, table, mcp.allowed_databases, mcp.allowed_schemas, mcp.allowed_tables):
-                    filtered_rows.append(row)
-            return json.dumps(filtered_rows, default=str, indent=2)
-        
         return json.dumps(rows, default=str, indent=2)
     except Exception as e:
         raise Exception(f"Failed to list tables: {str(e)}")
@@ -162,16 +114,6 @@ def get_table_schema(table_name: str) -> str:
 
     cursor = mcp.connection.cursor()
     try:
-        # Get database and schema for the table
-        cursor.execute(f"SELECT DATABASE_NAME, SCHEMA_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{table_name}'")
-        result = cursor.fetchone()
-        if not result:
-            raise ValueError(f"Table {table_name} not found")
-        
-        database, schema = result
-        if not check_access_permission(database, schema, table_name, mcp.allowed_databases, mcp.allowed_schemas, mcp.allowed_tables):
-            raise ValueError(f"Access to table {table_name} is not allowed")
-
         cursor.execute(f"DESCRIBE TABLE {table_name}")
         rows = cursor.fetchall()
         return json.dumps(rows, default=str, indent=2)
@@ -198,26 +140,6 @@ def query(sql: str) -> str:
 
     cursor = mcp.connection.cursor()
     try:
-        # Extract table names from the query
-        table_pattern = r'FROM\s+([a-zA-Z0-9_\.]+)'
-        tables = re.findall(table_pattern, sql, re.IGNORECASE)
-        
-        # Check access permissions for each table
-        for table in tables:
-            parts = table.split('.')
-            if len(parts) == 3:
-                database, schema, table_name = parts
-            elif len(parts) == 2:
-                schema, table_name = parts
-                database = mcp.connection.database
-            else:
-                table_name = parts[0]
-                database = mcp.connection.database
-                schema = mcp.connection.schema
-
-            if not check_access_permission(database, schema, table_name, mcp.allowed_databases, mcp.allowed_schemas, mcp.allowed_tables):
-                raise ValueError(f"Access to table {table} is not allowed")
-
         cursor.execute(sql)
         rows = cursor.fetchall()
         return json.dumps(rows, default=str, indent=2)

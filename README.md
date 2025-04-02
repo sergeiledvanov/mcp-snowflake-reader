@@ -10,7 +10,6 @@ A read-only MCP server for Snowflake databases. This server provides secure, rea
 
 - **Read-only Access**: Secure read-only access to Snowflake databases
 - **Access Control**: Fine-grained access control at database, schema, and table levels
-- **Security**: Secure connection handling and authentication
 
 ### Setup
 
@@ -71,35 +70,6 @@ Add the following configuration to your MCP client settings file (Cursor AI or C
 }
 ```
 
-### Security Settings
-
-You can use the following settings for security:
-
-- `--allowed-databases`: List of accessible databases (comma-separated)
-- `--allowed-schemas`: List of accessible schemas (comma-separated)
-- `--allowed-tables`: List of accessible tables (comma-separated)
-
-Example:
-```json
-{
-  "mcpServers": {
-    "mcp-snowflake-reader": {
-      "command": "uvx",
-      "args": [
-        "mcp-snowflake-reader",
-        "--connection",
-        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}",
-        "--allowed-databases",
-        "db1,db2",
-        "--allowed-schemas",
-        "schema1,schema2",
-        "--allowed-tables",
-        "TABLE1,TABLE2"
-      ]
-    }
-  }
-}
-```
 
 ### Limitations
 
@@ -127,7 +97,6 @@ Snowflake 데이터베이스의 테이블을 읽어오는 MCP(Microservice Contr
 
 - **읽기 전용 접근**: Snowflake 데이터베이스에 대한 안전한 읽기 전용 접근
 - **접근 제어**: 데이터베이스, 스키마, 테이블 수준의 세밀한 접근 제어
-- **보안**: 안전한 연결 처리 및 인증
 
 ### 설정
 
@@ -188,35 +157,7 @@ Cursor AI나 Claude와 같은 MCP 클라이언트의 설정 파일에 다음 설
 }
 ```
 
-### 보안 설정
 
-보안을 위해 다음 설정을 사용할 수 있습니다:
-
-- `--allowed-databases`: 접근 가능한 데이터베이스 목록 (쉼표로 구분)
-- `--allowed-schemas`: 접근 가능한 스키마 목록 (쉼표로 구분)
-- `--allowed-tables`: 접근 가능한 테이블 목록 (쉼표로 구분)
-
-예시:
-```json
-{
-  "mcpServers": {
-    "mcp-snowflake-reader": {
-      "command": "uvx",
-      "args": [
-        "mcp-snowflake-reader",
-        "--connection",
-        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}",
-        "--allowed-databases",
-        "db1,db2",
-        "--allowed-schemas",
-        "schema1,schema2",
-        "--allowed-tables",
-        "TABLE1,TABLE2"
-      ]
-    }
-  }
-}
-```
 
 ### 제한사항
 
