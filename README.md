@@ -8,163 +8,217 @@ A read-only MCP server for Snowflake databases. This server provides secure, rea
 
 ### Features
 
-- Read-only access to Snowflake databases
-- Secure connection handling
-- Access control for databases, schemas, and tables
-- Docker support
-- MCP protocol compliance
+- **Read-only Access**: Secure read-only access to Snowflake databases
+- **Access Control**: Fine-grained access control at database, schema, and table levels
+- **Security**: Secure connection handling and authentication
 
-### Prerequisites
+### Setup
 
-- Python 3.10 or higher
-- Docker (optional)
-- Snowflake account with appropriate permissions
+#### Snowflake Connection
 
-### Installation
+The Snowflake connection information should be provided as a JSON string in the following format:
 
-```bash
-# Clone the repository
-git clone https://github.com/fnf-deepHeading/mcp-snowflake-reader.git
-cd mcp-snowflake-reader
-
-# Install dependencies
-pip install -r requirements.txt
+```json
+{
+  "account": "your-account",
+  "user": "your-user",
+  "password": "your-password",
+  "warehouse": "your-warehouse",
+  "database": "your-database",
+  "schema": "your-schema",
+  "role": "your-role"
+}
 ```
 
-### Usage
+#### MCP Client Configuration
 
-#### Running with Docker
+Add the following configuration to your MCP client settings file (Cursor AI or Claude):
 
-```bash
-# Build the Docker image
-docker build -t mcp-snowflake-reader .
+##### Docker
 
-# Run with connection details
-docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
-
-# Run with access control
-docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
-
-# Show help
-docker run mcp-snowflake-reader -h
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}"
+      ]
+    }
+  }
+}
 ```
 
-#### Running directly
+##### UVX
 
-```bash
-# Run with connection details
-python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
-
-# Run with access control
-python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
-
-# Show help
-python main.py -h
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "uvx",
+      "args": [
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}"
+      ]
+    }
+  }
+}
 ```
 
-### Command Line Options
+### Security Settings
 
-- `--connection`: Snowflake 연결 정보 (JSON 문자열)
-- `--allowed-databases`: 허용할 데이터베이스 목록 (선택사항)
-- `--allowed-schemas`: 허용할 스키마 목록 (선택사항)
-- `--allowed-tables`: 허용할 테이블 목록 (선택사항)
-- `-h, --help`: 도움말 표시
+You can use the following settings for security:
 
-### API Endpoints
+- `--allowed-databases`: List of accessible databases (comma-separated)
+- `--allowed-schemas`: List of accessible schemas (comma-separated)
+- `--allowed-tables`: List of accessible tables (comma-separated)
 
-- `snowflake://tables`: 접근 가능한 모든 테이블 목록 조회
-- `snowflake://schema/{table_name}`: 특정 테이블의 스키마 조회
-- `query`: 읽기 전용 쿼리 실행
+Example:
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "uvx",
+      "args": [
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}",
+        "--allowed-databases",
+        "db1,db2",
+        "--allowed-schemas",
+        "schema1,schema2",
+        "--allowed-tables",
+        "TABLE1,TABLE2"
+      ]
+    }
+  }
+}
+```
 
-### Security
+### Limitations
 
-- Read-only access only
-- Access control at database, schema, and table levels
-- Secure connection handling
-- No write operations allowed
+- Only read-only operations are allowed
+- Table names can only contain alphanumeric characters, underscores, and dots
+- The following SQL keywords are prohibited:
+  - INSERT
+  - UPDATE
+  - DELETE
+  - DROP
+  - TRUNCATE
+  - ALTER
+  - CREATE
+  - GRANT
+  - REVOKE
+  - COMMIT
+  - ROLLBACK
+- When access control is enabled, only allowed databases, schemas, and tables are accessible
 
 ## Korean
 
-Snowflake 데이터베이스에 대한 읽기 전용 MCP 서버입니다. 이 서버는 MCP 프로토콜을 통해 Snowflake 데이터베이스에 대한 안전한 읽기 전용 접근을 제공합니다.
+Snowflake 데이터베이스의 테이블을 읽어오는 MCP(Microservice Control Protocol) 서버입니다.
 
 ### 주요 기능
 
-- Snowflake 데이터베이스 읽기 전용 접근
-- 안전한 연결 처리
-- 데이터베이스, 스키마, 테이블 수준의 접근 제어
-- Docker 지원
-- MCP 프로토콜 준수
+- **읽기 전용 접근**: Snowflake 데이터베이스에 대한 안전한 읽기 전용 접근
+- **접근 제어**: 데이터베이스, 스키마, 테이블 수준의 세밀한 접근 제어
+- **보안**: 안전한 연결 처리 및 인증
 
-### 사전 요구사항
+### 설정
 
-- Python 3.10 이상
-- Docker (선택사항)
-- 적절한 권한이 있는 Snowflake 계정
+#### Snowflake 연결 정보
 
-### 설치 방법
+Snowflake 연결 정보는 다음과 같은 형식으로 JSON 문자열로 제공됩니다:
 
-```bash
-# 저장소 클론
-git clone https://github.com/fnf-deepHeading/mcp-snowflake-reader.git
-cd mcp-snowflake-reader
-
-# 의존성 설치
-pip install -r requirements.txt
+```json
+{
+  "account": "your-account",
+  "user": "your-user",
+  "password": "your-password",
+  "warehouse": "your-warehouse",
+  "database": "your-database",
+  "schema": "your-schema",
+  "role": "your-role"
+}
 ```
 
-### 사용 방법
+#### MCP 클라이언트 설정
 
-#### Docker로 실행
+Cursor AI나 Claude와 같은 MCP 클라이언트의 설정 파일에 다음 설정을 추가하세요:
 
-```bash
-# Docker 이미지 빌드
-docker build -t mcp-snowflake-reader .
+##### Docker
 
-# 연결 정보로 실행
-docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
-
-# 접근 제어와 함께 실행
-docker run mcp-snowflake-reader --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
-
-# 도움말 표시
-docker run mcp-snowflake-reader -h
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}"
+      ]
+    }
+  }
+}
 ```
 
-#### 직접 실행
+##### UVX
 
-```bash
-# 연결 정보로 실행
-python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}'
-
-# 접근 제어와 함께 실행
-python main.py --connection '{"account":"USER_ACCOUNT.ap-northeast-2.aws","user":"USER_NAME","password":"USER_PASSWORD","warehouse":"USER_WAREHOUSE","database":"USER_DATABASE","role":"USER_ROLE","port":"443"}' --allowed-databases DB1 DB2 --allowed-schemas SCHEMA1 SCHEMA2 --allowed-tables TABLE1 TABLE2
-
-# 도움말 표시
-python main.py -h
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "uvx",
+      "args": [
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}"
+      ]
+    }
+  }
+}
 ```
 
-### 명령줄 옵션
+### 보안 설정
 
-- `--connection`: Snowflake 연결 정보 (JSON 문자열)
-- `--allowed-databases`: 허용할 데이터베이스 목록 (선택사항)
-- `--allowed-schemas`: 허용할 스키마 목록 (선택사항)
-- `--allowed-tables`: 허용할 테이블 목록 (선택사항)
-- `-h, --help`: 도움말 표시
+보안을 위해 다음 설정을 사용할 수 있습니다:
 
-### API 엔드포인트
+- `--allowed-databases`: 접근 가능한 데이터베이스 목록 (쉼표로 구분)
+- `--allowed-schemas`: 접근 가능한 스키마 목록 (쉼표로 구분)
+- `--allowed-tables`: 접근 가능한 테이블 목록 (쉼표로 구분)
 
-- `snowflake://tables`: 접근 가능한 모든 테이블 목록 조회
-- `snowflake://schema/{table_name}`: 특정 테이블의 스키마 조회
-- `query`: 읽기 전용 쿼리 실행
+예시:
+```json
+{
+  "mcpServers": {
+    "mcp-snowflake-reader": {
+      "command": "uvx",
+      "args": [
+        "mcp-snowflake-reader",
+        "--connection",
+        "{\"account\":\"your-account\",\"user\":\"your-user\",\"password\":\"your-password\",\"warehouse\":\"your-warehouse\",\"database\":\"your-database\",\"schema\":\"your-schema\",\"role\":\"your-role\"}",
+        "--allowed-databases",
+        "db1,db2",
+        "--allowed-schemas",
+        "schema1,schema2",
+        "--allowed-tables",
+        "TABLE1,TABLE2"
+      ]
+    }
+  }
+}
+```
 
-### 보안
-
-- 읽기 전용 접근만 허용
-- 데이터베이스, 스키마, 테이블 수준의 접근 제어
-- 안전한 연결 처리
-- 쓰기 작업 불가
-
-## 제한사항
+### 제한사항
 
 - 읽기 전용 작업만 허용됩니다
 - 테이블 이름은 영숫자, 언더스코어, 점만 허용됩니다
@@ -182,6 +236,6 @@ python main.py -h
   - ROLLBACK
 - 접근 제어가 설정된 경우, 허용된 데이터베이스, 스키마, 테이블만 접근 가능합니다
 
-## 라이선스
+## License
 
 MIT License 
