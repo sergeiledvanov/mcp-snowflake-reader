@@ -1,10 +1,10 @@
 [project]
 name = "mcp-snowflake-reader"
-version = "0.1.9"
+version = "0.2.0"
 description = "Read-only MCP server for Snowflake databases"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Miseon Kim" }
 ]
