@@ -9,7 +9,6 @@ A read-only MCP server for Snowflake databases. This server provides secure, rea
 ### Features
 
 - **Read-only Access**: Secure read-only access to Snowflake databases
-- **Access Control**: Fine-grained access control at database, schema, and table levels
 
 ### Setup
 
@@ -87,7 +86,10 @@ Add the following configuration to your MCP client settings file (Cursor AI or C
   - REVOKE
   - COMMIT
   - ROLLBACK
-- When access control is enabled, only allowed databases, schemas, and tables are accessible
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Korean
 
@@ -96,7 +98,6 @@ Snowflake 데이터베이스의 테이블을 읽어오는 MCP(Microservice Contr
 ### 주요 기능
 
 - **읽기 전용 접근**: Snowflake 데이터베이스에 대한 안전한 읽기 전용 접근
-- **접근 제어**: 데이터베이스, 스키마, 테이블 수준의 세밀한 접근 제어
 
 ### 설정
 
@@ -157,8 +158,6 @@ Cursor AI나 Claude와 같은 MCP 클라이언트의 설정 파일에 다음 설
 }
 ```
 
-
-
 ### 제한사항
 
 - 읽기 전용 작업만 허용됩니다
@@ -175,8 +174,7 @@ Cursor AI나 Claude와 같은 MCP 클라이언트의 설정 파일에 다음 설
   - REVOKE
   - COMMIT
   - ROLLBACK
-- 접근 제어가 설정된 경우, 허용된 데이터베이스, 스키마, 테이블만 접근 가능합니다
 
-## License
+### 라이선스
 
-MIT License 
+이 프로젝트는 MIT 라이선스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요. 

@@ -4,6 +4,10 @@ version = "0.1.9"
 description = "Read-only MCP server for Snowflake databases"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Miseon Kim" }
+]
 dependencies = [
     "mcp>=1.6.0",
     "python-dotenv>=1.0.0",
