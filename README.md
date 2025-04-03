@@ -2,6 +2,8 @@
 
 [English](#english) | [한국어](#korean)
 
+[![smithery badge](https://smithery.ai/badge/@fnf-deepHeading/mcp-snowflake-reader)](https://smithery.ai/server/@fnf-deepHeading/mcp-snowflake-reader)
+
 ## English
 
 A read-only MCP server for Snowflake databases. This server provides secure, read-only access to Snowflake databases through the MCP protocol.
@@ -69,6 +71,13 @@ Add the following configuration to your MCP client settings file (Cursor AI or C
 }
 ```
 
+### Installing via Smithery
+
+To install Snowflake Reader for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@fnf-deepHeading/mcp-snowflake-reader):
+
+```bash
+npx -y @smithery/cli install @fnf-deepHeading/mcp-snowflake-reader --client claude
+```
 
 ### Limitations
 
@@ -156,6 +165,14 @@ Cursor AI나 Claude와 같은 MCP 클라이언트의 설정 파일에 다음 설
     }
   }
 }
+```
+
+### Smithery 사용하여 설치
+
+[Smithery](https://smithery.ai/server/@fnf-deepHeading/mcp-snowflake-reader)를 통해 Claude Desktop에서 Snowflake Reader를 자동으로 설치하려면:
+
+```bash
+npx -y @smithery/cli install @fnf-deepHeading/mcp-snowflake-reader --client claude
 ```
 
 ### 제한사항
