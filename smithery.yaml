@@ -1,13 +1,7 @@
-# Smithery configuration file: https://smithery.ai/docs/deployments
-name: mcp-snowflake-reader
-version: 0.2.0
-description: Read-only MCP server for Snowflake databases
-type: mcp
-
-build:
-  dockerBuildPath: .
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
 startCommand:
+  type: stdio
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
     type: object
@@ -15,46 +9,47 @@ startCommand:
       - account
       - user
       - password
+      - warehouse
+      - database
+      - schema
+      - role
     properties:
       account:
         type: string
-        description: Snowflake account identifier
+        description: Snowflake account
       user:
         type: string
-        description: Snowflake username
+        description: Snowflake user
       password:
         type: string
         description: Snowflake password
       warehouse:
         type: string
-        description: Snowflake warehouse name
+        description: Snowflake warehouse
       database:
         type: string
-        description: Snowflake database name
+        description: Snowflake database
       schema:
         type: string
-        description: Snowflake schema name
+        description: Snowflake schema
       role:
         type: string
-        description: Snowflake role name
+        description: Snowflake role
   commandFunction:
-    # A function that produces the CLI command to start the MCP on stdio.
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
     |-
     (config) => ({
+      // Wrap the JSON string in single quotes to avoid shell parsing issues
       command: 'python',
       args: [
-        '-m',
-        'mcp_snowflake_reader.main',
-        '--connection',
-        JSON.stringify({
-          account: config.account,
-          user: config.user,
-          password: config.password,
-          warehouse: config.warehouse || '',
-          database: config.database || '',
-          schema: config.schema || '',
-          role: config.role || ''
-        })
+        '-m', 'mcp_snowflake_reader.main', '--connection', "'" + JSON.stringify(config) + "'"
       ]
     })
-  type: stdio 
+  exampleConfig:
+    account: your-account
+    user: your-user
+    password: your-password
+    warehouse: your-warehouse
+    database: your-database
+    schema: your-schema
+    role: your-role
