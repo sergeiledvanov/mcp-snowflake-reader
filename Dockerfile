@@ -8,15 +8,15 @@ RUN apt-get update && \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package files
+COPY pyproject.toml .
+COPY src/ ./src/
 
-# Copy application files
-COPY src/mcp_snowflake_reader/main.py .
+# Install the package in development mode
+RUN pip install --no-cache-dir -e .
 
-# Set execute permission
-RUN chmod +x main.py
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
 
 # Run the application
-ENTRYPOINT ["python", "main.py"] 
+ENTRYPOINT ["python", "-m", "mcp_snowflake_reader.main"] 

@@ -50,31 +50,38 @@ def validate_sql_query(sql: str) -> bool:
     return not any(keyword in sql_upper for keyword in forbidden_keywords)
 
 
+def get_connection():
+    """Snowflake 연결을 얻습니다. 연결이 없을 경우 새로 생성합니다."""
+    if not hasattr(get_connection, 'connection') or get_connection.connection is None:
+        try:
+            get_connection.connection = snowflake.connector.connect(**get_connection.connection_details)
+        except Exception as e:
+            raise Exception(f"Snowflake 연결 실패: {str(e)}")
+    
+    return get_connection.connection
+
+
 @asynccontextmanager
 async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
-    """Manages Snowflake connection lifecycle during server startup/shutdown.
-    Establishes connection when server starts and ensures proper cleanup on shutdown."""
+    """Manages Snowflake connection lifecycle during server startup/shutdown."""
     args = parse_args()
+    
     try:
+        # 연결 정보 저장 (실제 연결은 필요할 때만 수행)
         connection_details = json.loads(args.connection)
-        mcp.connection = snowflake.connector.connect(**connection_details)
-        mcp.is_connected = True
+        get_connection.connection_details = connection_details
+        get_connection.connection = None
+        
         yield
     except json.JSONDecodeError:
         raise Exception("연결 정보가 올바른 JSON 형식이 아닙니다. JSON 형식을 확인해주세요.")
-    except snowflake.connector.errors.InterfaceError as e:
-        if "404 Not Found" in str(e):
-            raise Exception("Snowflake 서버에 연결할 수 없습니다. 계정 정보를 확인해주세요.")
-        elif "250001" in str(e):
-            raise Exception("사용자 이름 또는 비밀번호가 올바르지 않습니다.")
-        else:
-            raise Exception(f"Snowflake 연결 오류: {str(e)}")
     except Exception as e:
-        raise Exception(f"Snowflake 연결 실패: {str(e)}\n연결 정보를 다시 확인해주세요.")
+        raise Exception(f"설정 오류: {str(e)}")
     finally:
-        if hasattr(mcp, 'connection') and mcp.connection:
-            mcp.connection.close()
-            mcp.is_connected = False
+        # 연결이 있으면 종료
+        if hasattr(get_connection, 'connection') and get_connection.connection:
+            get_connection.connection.close()
+            get_connection.connection = None
 
 
 # Create FastMCP instance with lifespan function for connection management
@@ -85,18 +92,21 @@ mcp = FastMCP("snowflake-read", lifespan=app_lifespan)
 def list_tables() -> str:
     """Returns a list of all tables in the connected Snowflake database.
     The result is formatted as a JSON string containing table information."""
-    if not mcp.connection or not mcp.is_connected:
-        raise Exception("Not connected to Snowflake")
-
-    cursor = mcp.connection.cursor()
     try:
-        cursor.execute("SHOW TABLES")
-        rows = cursor.fetchall()
-        return json.dumps(rows, default=str, indent=2)
+        # 필요할 때만 연결 얻기
+        conn = get_connection()
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SHOW TABLES")
+            rows = cursor.fetchall()
+            return json.dumps(rows, default=str, indent=2)
+        except Exception as e:
+            raise Exception(f"Failed to list tables: {str(e)}")
+        finally:
+            cursor.close()
     except Exception as e:
-        raise Exception(f"Failed to list tables: {str(e)}")
-    finally:
-        cursor.close()
+        raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
 @mcp.resource("snowflake://schema/{table_name}")
@@ -106,21 +116,24 @@ def get_table_schema(table_name: str) -> str:
         table_name: Name of the table to describe
     Returns:
         JSON string containing column definitions and other table metadata"""
-    if not mcp.connection or not mcp.is_connected:
-        raise Exception("Not connected to Snowflake")
-    
     if not validate_table_name(table_name):
         raise ValueError("Invalid table name")
-
-    cursor = mcp.connection.cursor()
+    
     try:
-        cursor.execute(f"DESCRIBE TABLE {table_name}")
-        rows = cursor.fetchall()
-        return json.dumps(rows, default=str, indent=2)
+        # 필요할 때만 연결 얻기
+        conn = get_connection()
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"DESCRIBE TABLE {table_name}")
+            rows = cursor.fetchall()
+            return json.dumps(rows, default=str, indent=2)
+        except Exception as e:
+            raise Exception(f"Failed to get table schema: {str(e)}")
+        finally:
+            cursor.close()
     except Exception as e:
-        raise Exception(f"Failed to get table schema: {str(e)}")
-    finally:
-        cursor.close()
+        raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
 @mcp.tool()
@@ -132,21 +145,24 @@ def query(sql: str) -> str:
         Query results as a JSON-formatted string
     Note: 
         This function is restricted to read-only operations for security"""
-    if not mcp.connection or not mcp.is_connected:
-        raise Exception("Not connected to Snowflake")
-    
     if not validate_sql_query(sql):
         raise ValueError("Query contains forbidden keywords or is not read-only")
-
-    cursor = mcp.connection.cursor()
+    
     try:
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        return json.dumps(rows, default=str, indent=2)
+        # 필요할 때만 연결 얻기
+        conn = get_connection()
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            return json.dumps(rows, default=str, indent=2)
+        except Exception as e:
+            raise Exception(f"Failed to execute query: {str(e)}")
+        finally:
+            cursor.close()
     except Exception as e:
-        raise Exception(f"Failed to execute query: {str(e)}")
-    finally:
-        cursor.close()
+        raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
 def main():
