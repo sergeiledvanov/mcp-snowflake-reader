@@ -1,0 +1,60 @@
+# Smithery configuration file: https://smithery.ai/docs/deployments
+name: mcp-snowflake-reader
+version: 0.2.0
+description: Read-only MCP server for Snowflake databases
+type: mcp
+
+build:
+  dockerBuildPath: .
+
+startCommand:
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - account
+      - user
+      - password
+    properties:
+      account:
+        type: string
+        description: Snowflake account identifier
+      user:
+        type: string
+        description: Snowflake username
+      password:
+        type: string
+        description: Snowflake password
+      warehouse:
+        type: string
+        description: Snowflake warehouse name
+      database:
+        type: string
+        description: Snowflake database name
+      schema:
+        type: string
+        description: Snowflake schema name
+      role:
+        type: string
+        description: Snowflake role name
+  commandFunction:
+    # A function that produces the CLI command to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'python',
+      args: [
+        '-m',
+        'mcp_snowflake_reader.main',
+        '--connection',
+        JSON.stringify({
+          account: config.account,
+          user: config.user,
+          password: config.password,
+          warehouse: config.warehouse || '',
+          database: config.database || '',
+          schema: config.schema || '',
+          role: config.role || ''
+        })
+      ]
+    })
+  type: stdio 
