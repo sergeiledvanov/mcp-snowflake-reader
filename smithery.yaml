@@ -7,31 +7,31 @@ startCommand:
     type: object
     required:
       - account
+      - database
+      - warehouse
+      - schema
       - user
       - password
-      - warehouse
-      - database
-      - schema
       - role
     properties:
       account:
         type: string
         description: Snowflake account
+      database:
+        type: string
+        description: Snowflake database
+      warehouse:
+        type: string
+        description: Snowflake warehouse
+      schema:
+        type: string
+        description: Snowflake schema
       user:
         type: string
         description: Snowflake user
       password:
         type: string
         description: Snowflake password
-      warehouse:
-        type: string
-        description: Snowflake warehouse
-      database:
-        type: string
-        description: Snowflake database
-      schema:
-        type: string
-        description: Snowflake schema
       role:
         type: string
         description: Snowflake role
@@ -47,9 +47,9 @@ startCommand:
     })
   exampleConfig:
     account: your-account
+    database: your-database
+    warehouse: your-warehouse
+    schema: your-schema
     user: your-user
     password: your-password
-    warehouse: your-warehouse
-    database: your-database
-    schema: your-schema
     role: your-role
