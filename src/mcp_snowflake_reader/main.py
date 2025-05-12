@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 
 import json
-import sys
 import re
-import argparse
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Dict, List, Set
 
 import snowflake.connector
+import os
+
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-
-def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='MCP server for read-only access to Snowflake databases')
-    parser.add_argument('--connection', required=True, help='Snowflake connection details as JSON string')
-    
-    args = parser.parse_args()
-    return args
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='mcp-snowflake-reader.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def validate_table_name(table_name: str) -> bool:
@@ -47,7 +43,13 @@ def validate_sql_query(sql: str) -> bool:
     
     # Convert to uppercase for case-insensitive matching
     sql_upper = sql.upper()
-    return not any(keyword in sql_upper for keyword in forbidden_keywords)
+    for keyword in forbidden_keywords:
+        # Use word boundaries \b to match whole words only
+        pattern = r'\b' + re.escape(keyword) + r'\b'
+        if re.search(pattern, sql_upper):
+            return False
+
+    return True
 
 
 def get_connection():
@@ -56,6 +58,7 @@ def get_connection():
         try:
             get_connection.connection = snowflake.connector.connect(**get_connection.connection_details)
         except Exception as e:
+            logger.info(f"Exception {str(e)}")
             raise Exception(f"Snowflake 연결 실패: {str(e)}")
     
     return get_connection.connection
@@ -64,18 +67,40 @@ def get_connection():
 @asynccontextmanager
 async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
     """Manages Snowflake connection lifecycle during server startup/shutdown."""
-    args = parse_args()
-    
+
+    # Load environment variables from .env file
+    load_dotenv()
+
     try:
+
+        # Get connection details from environment variables
+        connection_details = {
+            "authenticator": os.environ.get("SNOWFLAKE_AUTH_TYPE"),
+            "account": os.environ.get("SNOWFLAKE_ACCOUNT"),
+            "user": os.environ.get("SNOWFLAKE_USER"),
+            "database": os.environ.get("SNOWFLAKE_DATABASE"),
+            "warehouse": os.environ.get("SNOWFLAKE_WAREHOUSE")
+        }
+
+        # Remove None values
+        connection_details = {k: v for k, v in connection_details.items() if v is not None}
+
+        if not connection_details:
+            logger.info("No Snowflake connection details found in environment variables")
+            raise Exception("No Snowflake connection details found in environment variables")
+
+        logger.info(f"Snowflake connection details loaded from environment variables ${connection_details}")
+
         # 연결 정보 저장 (실제 연결은 필요할 때만 수행)
-        connection_details = json.loads(args.connection)
         get_connection.connection_details = connection_details
         get_connection.connection = None
         
         yield
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.info(f"JSONDecodeError {str(e)}")
         raise Exception("연결 정보가 올바른 JSON 형식이 아닙니다. JSON 형식을 확인해주세요.")
     except Exception as e:
+        logger.info(f"Exception {str(e)}")
         raise Exception(f"설정 오류: {str(e)}")
     finally:
         # 연결이 있으면 종료
@@ -86,7 +111,7 @@ async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
 
 # Create FastMCP instance with lifespan function for connection management
 mcp = FastMCP("snowflake-read", lifespan=app_lifespan)
-
+logger.info("MCP Snowflake Reader started")
 
 @mcp.resource("snowflake://tables")
 def list_tables() -> str:
@@ -102,10 +127,12 @@ def list_tables() -> str:
             rows = cursor.fetchall()
             return json.dumps(rows, default=str, indent=2)
         except Exception as e:
+            logger.info(f"Failed to list tables: {str(e)}")
             raise Exception(f"Failed to list tables: {str(e)}")
         finally:
             cursor.close()
     except Exception as e:
+        logger.info(f"Failed to connect to Snowflake: {str(e)}")
         raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
@@ -117,6 +144,7 @@ def get_table_schema(table_name: str) -> str:
     Returns:
         JSON string containing column definitions and other table metadata"""
     if not validate_table_name(table_name):
+        logger.info(f"Invalid table name: {table_name}")
         raise ValueError("Invalid table name")
     
     try:
@@ -129,10 +157,12 @@ def get_table_schema(table_name: str) -> str:
             rows = cursor.fetchall()
             return json.dumps(rows, default=str, indent=2)
         except Exception as e:
+            logger.info(f"Failed to get table schema: {str(e)}")
             raise Exception(f"Failed to get table schema: {str(e)}")
         finally:
             cursor.close()
     except Exception as e:
+        logger.info(f"Failed to connect to Snowflake: {str(e)}")
         raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
@@ -146,8 +176,11 @@ def query(sql: str) -> str:
     Note: 
         This function is restricted to read-only operations for security"""
     if not validate_sql_query(sql):
+        logger.info(f"Query contains forbidden keywords: {sql}")
         raise ValueError("Query contains forbidden keywords or is not read-only")
-    
+
+    logger.info(f"Executing query for: {sql}")
+
     try:
         # 필요할 때만 연결 얻기
         conn = get_connection()
@@ -158,24 +191,21 @@ def query(sql: str) -> str:
             rows = cursor.fetchall()
             return json.dumps(rows, default=str, indent=2)
         except Exception as e:
+            logger.info(f"Failed to execute query: {str(e)}")
             raise Exception(f"Failed to execute query: {str(e)}")
         finally:
             cursor.close()
     except Exception as e:
+        logger.info(f"Failed to connect to Snowflake: {str(e)}")
         raise Exception(f"Failed to connect to Snowflake: {str(e)}")
 
 
 def main():
     """Entry point for the MCP server."""
     try:
-        # 도움말 출력 여부 확인
-        if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv:
-            parse_args()
-            return
-            
         mcp.run()
     except KeyboardInterrupt:
-        print("\n👋 MCP Snowflake Reader stopped by user.")
+        logger.info("\n👋 MCP Snowflake Reader stopped by user.")
 
 
 if __name__ == "__main__":
