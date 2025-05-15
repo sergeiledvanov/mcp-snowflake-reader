@@ -40,7 +40,7 @@ def validate_sql_query(sql: str) -> bool:
         'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
         'CREATE', 'GRANT', 'REVOKE', 'COMMIT', 'ROLLBACK'
     ]
-    
+
     # Convert to uppercase for case-insensitive matching
     sql_upper = sql.upper()
     for keyword in forbidden_keywords:
@@ -60,7 +60,7 @@ def get_connection():
         except Exception as e:
             logger.info(f"Exception {str(e)}")
             raise Exception(f"Snowflake 연결 실패: {str(e)}")
-    
+
     return get_connection.connection
 
 
@@ -94,7 +94,7 @@ async def app_lifespan(mcp: FastMCP) -> AsyncIterator[None]:
         # 연결 정보 저장 (실제 연결은 필요할 때만 수행)
         get_connection.connection_details = connection_details
         get_connection.connection = None
-        
+
         yield
     except json.JSONDecodeError as e:
         logger.info(f"JSONDecodeError {str(e)}")
@@ -120,7 +120,7 @@ def list_tables() -> str:
     try:
         # 필요할 때만 연결 얻기
         conn = get_connection()
-        
+
         cursor = conn.cursor()
         try:
             cursor.execute("SHOW TABLES")
@@ -146,11 +146,11 @@ def get_table_schema(table_name: str) -> str:
     if not validate_table_name(table_name):
         logger.info(f"Invalid table name: {table_name}")
         raise ValueError("Invalid table name")
-    
+
     try:
         # 필요할 때만 연결 얻기
         conn = get_connection()
-        
+
         cursor = conn.cursor()
         try:
             cursor.execute(f"DESCRIBE TABLE {table_name}")
@@ -172,8 +172,8 @@ def query(sql: str) -> str:
     Args:
         sql: SQL query string to execute (must be read-only)
     Returns:
-        Query results as a JSON-formatted string
-    Note: 
+        Query results as a formatted table string
+    Note:
         This function is restricted to read-only operations for security"""
     if not validate_sql_query(sql):
         logger.info(f"Query contains forbidden keywords: {sql}")
@@ -184,12 +184,49 @@ def query(sql: str) -> str:
     try:
         # 필요할 때만 연결 얻기
         conn = get_connection()
-        
+
         cursor = conn.cursor()
         try:
             cursor.execute(sql)
+
+            # Get column names from cursor description
+            columns = [col[0] for col in cursor.description] if cursor.description else []
+
+            # Fetch all rows
             rows = cursor.fetchall()
-            return json.dumps(rows, default=str, indent=2)
+
+            if not rows:
+                return "No results found."
+
+            # Format as table
+            # Convert all values to strings and get maximum width for each column
+            str_rows = []
+            col_widths = [len(str(col)) for col in columns]
+
+            for row in rows:
+                str_row = [str(val) if val is not None else "NULL" for val in row]
+                str_rows.append(str_row)
+                # Update column widths if necessary
+                for i, val in enumerate(str_row):
+                    if i < len(col_widths):
+                        col_widths[i] = max(col_widths[i], len(val))
+
+            # Build the table
+            result = []
+
+            # Header
+            header = " | ".join(col.ljust(col_widths[i]) for i, col in enumerate(columns))
+            result.append(header)
+
+            # Separator
+            separator = "-+-".join("-" * width for width in col_widths)
+            result.append(separator)
+
+            # Data rows
+            for row in str_rows:
+                result.append(" | ".join(val.ljust(col_widths[i]) for i, val in enumerate(row)))
+
+            return "\n".join(result)
         except Exception as e:
             logger.info(f"Failed to execute query: {str(e)}")
             raise Exception(f"Failed to execute query: {str(e)}")
@@ -210,3 +247,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
