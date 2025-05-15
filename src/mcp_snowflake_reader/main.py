@@ -8,6 +8,7 @@ from typing import AsyncIterator, Dict, List, Set
 
 import snowflake.connector
 import os
+import sqlparse
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -179,7 +180,14 @@ def query(sql: str) -> str:
         logger.info(f"Query contains forbidden keywords: {sql}")
         raise ValueError("Query contains forbidden keywords or is not read-only")
 
-    logger.info(f"Executing query for: {sql}")
+    # Format SQL query for better readability using sqlparse
+    formatted_sql = sqlparse.format(sql,
+                                  reindent=True,
+                                  keyword_case='upper',
+                                  indent_width=4)
+
+    # Display formatted query before execution
+    logger.info(f"Executing query for: \n{formatted_sql}")
 
     try:
         # 필요할 때만 연결 얻기
@@ -213,6 +221,9 @@ def query(sql: str) -> str:
 
             # Build the table
             result = []
+
+            result.append(formatted_sql)
+            result.append("\n")
 
             # Header
             header = " | ".join(col.ljust(col_widths[i]) for i, col in enumerate(columns))
