@@ -9,6 +9,9 @@ from typing import AsyncIterator, Dict, List, Set
 import snowflake.connector
 import os
 import sqlparse
+from pygments import highlight
+from pygments.lexers.sql import SqlLexer
+from pygments.formatters import Terminal256Formatter
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -186,7 +189,14 @@ def query(sql: str) -> str:
                                   keyword_case='upper',
                                   indent_width=4)
 
-    # Display formatted query before execution
+    # Apply syntax highlighting with Pygments for colored output
+    colored_sql = highlight(
+        formatted_sql,
+        SqlLexer(),
+        Terminal256Formatter(style='monokai')  # You can choose different styles like 'default', 'monokai', 'solarized-dark', etc.
+    )
+
+    # Use the colored version for display, keeping the plain version for logging
     logger.info(f"Executing query for: \n{formatted_sql}")
 
     try:
@@ -222,7 +232,8 @@ def query(sql: str) -> str:
             # Build the table
             result = []
 
-            result.append(formatted_sql)
+            # Use the colored SQL instead of plain formatted SQL
+            result.append(colored_sql)
             result.append("\n")
 
             # Header
@@ -258,5 +269,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
