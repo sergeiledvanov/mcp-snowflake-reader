@@ -39,6 +39,10 @@ def validate_sql_query(sql: str) -> bool:
     Returns:
         bool: True if query is read-only, False otherwise
     """
+    # Check if the SQL query starts with a comment
+    if sql.strip().startswith('--'):
+        return False
+
     # List of forbidden SQL keywords
     forbidden_keywords = [
         'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
@@ -174,14 +178,14 @@ def get_table_schema(table_name: str) -> str:
 def query(sql: str) -> str:
     """Executes a read-only SQL query against the Snowflake database.
     Args:
-        sql: SQL query string to execute (must be read-only)
+        sql: SQL query string to execute (must be read-only and without any comments)
     Returns:
         Query results as a formatted table string
     Note:
         This function is restricted to read-only operations for security"""
     if not validate_sql_query(sql):
-        logger.info(f"Query contains forbidden keywords: {sql}")
-        raise ValueError("Query contains forbidden keywords or is not read-only")
+        logger.info(f"Query contains forbidden keywords or sql comments: {sql}")
+        raise ValueError("Query contains forbidden keywords or is not read-only or has sql comments")
 
     # Format SQL query for better readability using sqlparse
     formatted_sql = sqlparse.format(sql,
