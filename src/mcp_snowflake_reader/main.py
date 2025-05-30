@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='mcp-snowflake-reader.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='mcp-snowflake-reader.log', encoding='utf-8', level=logging.ERROR)
 
 
 def validate_table_name(table_name: str) -> bool:
