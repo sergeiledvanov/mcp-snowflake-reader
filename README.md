@@ -8,6 +8,14 @@ A read-only MCP server for Snowflake databases. This server provides secure, rea
 
 ### Setup
 
+#### Installation
+
+Run the installation script to set up the virtual environment and install the package:
+
+```bash
+./preinstall.sh
+```
+
 #### Snowflake Connection
 
 The Snowflake connection information should be provided as an .env file in the following format:
@@ -22,21 +30,20 @@ SNOWFLAKE_WAREHOUSE=...
 
 #### MCP Client Configuration
 
-Add the following configuration to your MCP client settings file (Cursor AI or Claude):
-
-##### Docker
+The repository includes an `.mcp.json` file ready for use with Claude Code. For other clients, add the following configuration to your MCP client settings file:
 
 ```json
+{
   "mcpServers": {
     "sf-reader": {
-      "command": "/path/to/mcp-snowflake-reader/.venv/bin/python",
+      "command": "./.venv/bin/python",
       "args": [
         "-m",
         "mcp_snowflake_reader.main"
-      ],
-      "cwd": "/path/to/mcp-snowflake-reader"
+      ]
     }
   }
+}
 ```
 
 ### Limitations
