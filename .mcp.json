@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sf-reader": {
+      "command": "./.venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_snowflake_reader.main"
+      ]
+    }
+  }
+}
