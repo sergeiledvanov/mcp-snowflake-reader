@@ -9,12 +9,13 @@ from typing import AsyncIterator, Dict, List, Set
 import snowflake.connector
 import os
 import sqlparse
+from fastmcp.server.auth import OAuthProvider
 from pygments import highlight
-from pygments.lexers.sql import SqlLexer
+from pygments.lexers import get_lexer_by_name
 from pygments.formatters import Terminal256Formatter
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='mcp-snowflake-reader.log', encoding='utf-8', level=logging.ERROR)
@@ -196,7 +197,7 @@ def query(sql: str) -> str:
     # Apply syntax highlighting with Pygments for colored output
     colored_sql = highlight(
         formatted_sql,
-        SqlLexer(),
+        get_lexer_by_name('sql'),
         Terminal256Formatter(style='monokai')  # You can choose different styles like 'default', 'monokai', 'solarized-dark', etc.
     )
 
